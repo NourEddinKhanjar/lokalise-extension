@@ -24,7 +24,5 @@ function toggleExtension() {
     chrome.storage.sync.set({
       enabled: !enabled,
     });
-
-    document.dispatchEvent(new CustomEvent('extension-enable-status-changed', { detail: { isEnabled: !enabled }}));
   });
 }
