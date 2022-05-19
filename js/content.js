@@ -85,7 +85,9 @@ class PageTranslator {
    }
 
    _initMouseOnClick() {
-      document.addEventListener('click', () => {
+      document.addEventListener('click', (clickEvent) => {
+         clickEvent.preventDefault();
+
          if (!this.mousePointing)
             return;
 
@@ -99,6 +101,8 @@ class PageTranslator {
          );
 
          this._disableMousePointing();
+
+         return false;
       });
    }
 
