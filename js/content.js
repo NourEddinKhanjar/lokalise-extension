@@ -19,7 +19,6 @@ class PageTranslator {
       this.modal.appendToBody();
 
       //this._insecureContentNotification();
-      this._loadTranslations();
       this._initMouseOverEvent();
       this._initMouseOnClick();
    }
@@ -49,7 +48,7 @@ class PageTranslator {
    }
 
    _initMouseOverEvent() {
-      document.addEventListener('mouseover', (mouseEnterEvent) => {
+      document.onmouseover = (mouseEnterEvent) => {
          if (!this.mousePointingEnabled)
             return;
 
@@ -57,7 +56,7 @@ class PageTranslator {
 
          if (mouseEnterEvent.path.length > 4)
             this._setPointingElement(mouseEnterEvent.target);
-      });
+      };
    }
 
    _resetPointingElementStyle() {
@@ -78,43 +77,49 @@ class PageTranslator {
    }
 
    _setPointingElement(element) {
-      element.lokaliseBackupStyle = Object.assign({}, element.style);
+      element.lokaliseBackupStyle = window.getComputedStyle(element);
       
       this.mousePointing = element;
       this.mousePointing.style.backgroundColor = 'rgba(255,255,0,0.5)';
    }
 
    _initMouseOnClick() {
-      document.addEventListener('click', (clickEvent) => {
-         clickEvent.preventDefault();
-
+      document.onclick = (clickEvent) => {
          if (!this.mousePointing)
             return;
+
+         clickEvent.preventDefault();
 
          const path = this._getElementPath(this.mousePointing).join(' > ');
 
          this.modal.show(
-            this.mousePointing,
-            this.mousePointing.innerHTML,
-            this.translations[path] ? this.translations[path].targetTranslation : "",
-            path
+             this.mousePointing,
+             this.mousePointing.innerHTML,
+             this.translations[path] ? this.translations[path].targetTranslation : this.mousePointing.innerHTML,
+             path,
+             this.translations[path] ? this.translations[path].isGlobal === 1 : false
          );
 
          this._disableMousePointing();
 
          return false;
-      });
+      };
    }
 
    _createTranslationModal() {
       const modal =  {
-         overlay: jQuery('<div style="display:block;position:fixed;z-index:99998;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.2)"></div>'),
+         overlay: jQuery('<div class="lokalise-translator-overlay"></div>'),
          container: jQuery(`
-            <div style="display:block;position:absolute;z-index:99999;top:0;left:0;width:400px;box-sizing:border-box;padding:10px 15px;background-color: white;border-radius: 5px;box-shadow: 0 5px 5px rgba(0,0,0,0.2);">
-               <form style="display:block;">
-                  <label for="lokaliseTanslatorTranslation" style="display:block;font-weight:600;">Translation</label>
-                  <textarea name="targetTranslation" id="lokaliseTanslatorTranslation" style="width:100%;height:100px;margin-bottom: 10px;border: solid #ddd 1px;border-radius: 3px;padding: 10px;box-sizing: border-box;"></textarea>
-                  <button type="submit" style="background-color: forestgreen;border: none;padding: 10px;border-radius: 3px;color: white;width:100%;text-align:center;">Save</button>
+            <div class="lokalise-translator-container">
+               <form style="">
+                  <label for="lokaliseTanslatorTranslation" style="">Lokalise Translation</label>
+                  <textarea name="targetTranslation" id="lokaliseTanslatorTranslation"></textarea>
+                  <label class="lokalise-checkbox">
+                    <input type="checkbox" name="isGlobal" value="1">
+                    <span class="checkbox"></span>
+                    <span class="text">Global for this domain</span>
+                  </label>
+                  <button type="submit">Save</button>
                   <input type="hidden" name="baseTranslation" value="" />
                   <input type="hidden" name="path" value="" />
                </form>
@@ -123,13 +128,22 @@ class PageTranslator {
          appendToBody: function () {
             jQuery("body").append(this.overlay).append(this.container);
          },
-         show: function (centerBy, baseTranslation, targetTranslation, path) {
+         destroy: function () {
+            this.overlay.remove();
+            this.container.remove();
+         },
+         show: function (centerBy, baseTranslation, targetTranslation, path, isGlobal) {
             this.overlay.show();
             this.container.show();
 
             this.container.find('textarea[name=targetTranslation]').val(targetTranslation ?? "");
             this.container.find('input[name=baseTranslation]').val(baseTranslation ?? "");
             this.container.find('input[name=path]').val(path ?? "");
+
+            if (isGlobal)
+               this.container.find('input[name=isGlobal]').attr("checked", "checked").prop("checked", true);
+            else
+               this.container.find('input[name=isGlobal]').removeAttr("checked").prop("checked", false);
 
             if (centerBy)
                this.positionContainer(jQuery(centerBy));
@@ -139,14 +153,22 @@ class PageTranslator {
             this.container.hide();
          },
          positionContainer: function (centerBy) {
-            let centerByOffset = centerBy.offset();
-            let centerByWidth = centerBy.outerWidth();
-            let containerHeight = this.container.outerHeight();
-            let containerWidth = this.container.outerWidth();
+            const centerByOffset = centerBy.offset();
+            const centerByWidth = centerBy.outerWidth();
+            const containerHeight = this.container.outerHeight();
+            const containerWidth = this.container.outerWidth();
+
+            let calculateTop = centerByOffset.top - containerHeight - 10;
+            if (calculateTop < 0)
+               calculateTop = 10;
+
+            let calculateLeft = centerByOffset.left + (centerByWidth / 2) - (containerWidth / 2);
+            if (calculateLeft < 0)
+               calculateLeft = 10;
 
             this.container.css({
-               top: centerByOffset.top - containerHeight - 10,
-               left: centerByOffset.left + (centerByWidth / 2) - (containerWidth / 2)
+               top: calculateTop,
+               left: calculateLeft
             });
          }
       };
@@ -163,11 +185,14 @@ class PageTranslator {
             modal.container.find('input[name=path]').val(),
             modal.container.find('input[name=baseTranslation]').val(),
             modal.container.find('textarea[name=targetTranslation]').val(),
+            modal.container.find('input[name=isGlobal]').is(":checked")
          ).then((response) => {
             modal.hide();
+            this._enableMousePointing();
          }).catch((error) => {
-            modal.hide();
             console.error(error);
+            modal.hide();
+            this._enableMousePointing();
          });
 
          return false;
@@ -178,13 +203,14 @@ class PageTranslator {
       return modal;
    }
 
-   _postTranslation(htmlSelector, baseTranslation, targetTranslation) {
+   _postTranslation(htmlSelector, baseTranslation, targetTranslation, isGlobal) {
       return new Promise((resolve, reject) => {
          const data = {
             url: this.url,
             htmlSelector: htmlSelector,
             baseTranslation: baseTranslation,
-            targetTranslation: targetTranslation
+            targetTranslation: targetTranslation,
+            isGlobal: isGlobal === true ? 1 : 0
          };
 
          jQuery.ajax({
@@ -238,4 +264,9 @@ class PageTranslator {
 
 }
 
-(new PageTranslator()).init();
+const pageTranslator = new PageTranslator();
+
+chrome.storage.sync.get("enabled", ({ enabled }) => {
+   if (enabled)
+      pageTranslator.init();
+});

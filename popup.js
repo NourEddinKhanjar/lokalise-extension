@@ -24,5 +24,7 @@ function toggleExtension() {
     chrome.storage.sync.set({
       enabled: !enabled,
     });
+
+    window.location = window.location;
   });
 }
