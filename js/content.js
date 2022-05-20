@@ -126,7 +126,7 @@ class PageTranslator {
                   <label class="lokalise-checkbox">
                     <input type="checkbox" name="isGlobal" value="1">
                     <span class="checkbox"></span>
-                    <span class="text">Global for this domain</span>
+                    <span class="text">Global for this web site</span>
                   </label>
                   <button type="submit">Save</button>
                   <input type="hidden" name="baseTranslation" value="" />
