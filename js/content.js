@@ -42,8 +42,12 @@ class PageTranslator {
    _insertTranslation(translation) {
       this.translations[translation.htmlSelector] = translation;
 
+      const translationElement = jQuery(translation.htmlSelector);
+
       if (this.livePreview)
-         jQuery(translation.htmlSelector).html(translation.targetTranslation);
+         translationElement.html(translation.targetTranslation);
+
+      translationElement.css('background-color', 'rgba(255,255,0,0.5)');
    }
 
    _initMouseOverEvent() {
@@ -63,7 +67,7 @@ class PageTranslator {
 
    _resetPointingElementStyle() {
       if (this.mousePointing && this.mousePointing.lokaliseBackupStyle) {
-         this.mousePointing.style = this.mousePointing.lokaliseBackupStyle;
+         jQuery(this.mousePointing).css('background-color', this.mousePointing.lokaliseBackupStyle);
          delete this.mousePointing.lokaliseBackupStyle;
          this.mousePointing = null;
       }
@@ -79,7 +83,7 @@ class PageTranslator {
    }
 
    _setPointingElement(element) {
-      element.lokaliseBackupStyle = window.getComputedStyle(element);
+      element.lokaliseBackupStyle = jQuery(element).css('background-color');
       this.mousePointing = element;
       this.mousePointing.style.backgroundColor = 'rgba(255,255,0,0.5)';
    }
