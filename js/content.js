@@ -96,11 +96,13 @@ class PageTranslator {
          clickEvent.preventDefault();
 
          const path = this._getElementPath(this.mousePointing).join(' > ');
+         const baseTranslation = this.mousePointing.innerHTML.trim();
+         const targetTranslation = this.translations[path] ? this.translations[path].targetTranslation : baseTranslation;
 
          this.modal.show(
              this.mousePointing,
-             this.mousePointing.innerHTML,
-             this.translations[path] ? this.translations[path].targetTranslation : this.mousePointing.innerHTML,
+             baseTranslation,
+             targetTranslation,
              path,
              this.translations[path] ? this.translations[path].isGlobal === 1 : false
          );
@@ -175,6 +177,9 @@ class PageTranslator {
             let calculateLeft = centerByOffset.left + (centerByWidth / 2) - (containerWidth / 2);
             if (calculateLeft < 0)
                calculateLeft = 10;
+
+            if (calculateLeft + containerWidth > jQuery(window).width())
+               calculateLeft = jQuery(window).width() - containerWidth - 10;
 
             this.container.css({
                top: calculateTop,
