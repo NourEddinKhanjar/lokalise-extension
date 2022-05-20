@@ -47,7 +47,7 @@ class PageTranslator {
       if (this.livePreview)
          translationElement.html(translation.targetTranslation);
 
-      translationElement.css('background-color', 'rgba(255,255,0,0.5)');
+      translationElement.css('background-color', 'rgba(0,0,0,0.1)');
    }
 
    _initMouseOverEvent() {
