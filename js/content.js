@@ -1,6 +1,6 @@
 class PageTranslator {
 
-   constructor() {
+   constructor(livePreview) {
       this.endpoint = "http://165.227.164.99:15000/translations";
       this.mousePointing = null;
       this.mousePointingEnabled = true;
@@ -8,6 +8,7 @@ class PageTranslator {
       this.url = window.location.href;
       this.urlEncoded = this._base64Encode(this.url);
       this.modal = this._createTranslationModal();
+      this.livePreview = livePreview;
    }
 
    init() {
@@ -78,7 +79,6 @@ class PageTranslator {
 
    _setPointingElement(element) {
       element.lokaliseBackupStyle = window.getComputedStyle(element);
-      
       this.mousePointing = element;
       this.mousePointing.style.backgroundColor = 'rgba(255,255,0,0.5)';
    }
@@ -264,9 +264,14 @@ class PageTranslator {
 
 }
 
-const pageTranslator = new PageTranslator();
-
-chrome.storage.sync.get("enabled", ({ enabled }) => {
-   if (enabled)
+chrome.storage.sync.get("lokaliseSettings", ({ lokaliseSettings }) => {
+   const settings = lokaliseSettings[getWebsiteUrl()];
+   if (settings?.enabled) {
+      const pageTranslator = new PageTranslator(settings?.livePreview);
       pageTranslator.init();
+   }
 });
+
+function getWebsiteUrl() {
+   return window.btoa(window.location.href.split('//')[1].split('/')[0]);
+}
