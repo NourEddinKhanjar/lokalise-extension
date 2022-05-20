@@ -1,5 +1,11 @@
 div.lokalise-translator-overlay {display:block;position:fixed;z-index:99998;top:0;left:0;width:100%;height:100%;background-color:rgba(0,0,0,0.2)}
+div.lokalise-translator-editing-notification {display:block;position:fixed;z-index:99999;bottom:0;left:0;width:100%;box-sizing: border-box;padding: 5px 0;color:white;text-align: center;font-size:14px;background-color:#ff6336;}
 div.lokalise-translator-container {display:block;position:absolute;z-index:99999;top:0;left:0;width:400px;box-sizing:border-box;padding:10px 15px;background-color: white;border-radius: 5px;box-shadow: 0 5px 5px rgba(0,0,0,0.2);}
+div.lokalise-translator-container > a.lokalise-translator-close {position:absolute;display:block;top:18px;right:15px;width:15px;height:15px;}
+div.lokalise-translator-container > a.lokalise-translator-close::before,
+div.lokalise-translator-container > a.lokalise-translator-close::after {content:"";position:absolute;top:0;left:0;display:block;width:100%;height:1px;background-color:black;}
+div.lokalise-translator-container > a.lokalise-translator-close::before {transform: rotate(45deg);}
+div.lokalise-translator-container > a.lokalise-translator-close::after {transform: rotate(135deg);}
 div.lokalise-translator-container > form {display:block;font-size:14px;}
 div.lokalise-translator-container > form label {display:block;font-weight:600;}
 div.lokalise-translator-container > form textarea {width:100%;height:100px;margin-bottom: 10px;border: solid #ddd 1px;border-radius: 3px;padding: 10px;box-sizing: border-box;}

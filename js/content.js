@@ -12,10 +12,8 @@ class PageTranslator {
    }
 
    init() {
-      this.translations = {
-         ...this.translations,
-         ...this._loadTranslations()
-      };
+      for (let translation of Object.values(this._loadTranslations()))
+         this._insertTranslation(translation);
 
       this.modal.appendToBody();
 
@@ -38,14 +36,14 @@ class PageTranslator {
       xmlHttp.open('GET', this.endpoint + '?url='+ this.urlEncoded, false);
       xmlHttp.send(null);
 
-      const translations = JSON.parse(xmlHttp.responseText);
-      const translationsMapped = {};
+      return JSON.parse(xmlHttp.responseText);
+   }
 
-      for (let translation of translations) {
-         translationsMapped[translation.htmlSelector] = translation;
-      }
-      
-      return translationsMapped;
+   _insertTranslation(translation) {
+      this.translations[translation.htmlSelector] = translation;
+
+      if (this.livePreview)
+         jQuery(translation.htmlSelector).html(translation.targetTranslation);
    }
 
    _initMouseOverEvent() {
@@ -54,6 +52,9 @@ class PageTranslator {
             return;
 
          this._resetPointingElementStyle();
+
+         if (mouseEnterEvent.target === this.modal.editingNotification.get(0))
+            return;
 
          if (mouseEnterEvent.path.length > 4)
             this._setPointingElement(mouseEnterEvent.target);
@@ -109,8 +110,10 @@ class PageTranslator {
    _createTranslationModal() {
       const modal =  {
          overlay: jQuery('<div class="lokalise-translator-overlay"></div>'),
+         editingNotification: jQuery('<div class="lokalise-translator-editing-notification">Lokalise editor is now active.</div>'),
          container: jQuery(`
             <div class="lokalise-translator-container">
+               <a href="javascript:void(0);" class="lokalise-translator-close"></a>
                <form style="">
                   <label for="lokaliseTanslatorTranslation" style="">Lokalise Translation</label>
                   <textarea name="targetTranslation" id="lokaliseTanslatorTranslation"></textarea>
@@ -126,7 +129,10 @@ class PageTranslator {
             </div>
          `),
          appendToBody: function () {
-            jQuery("body").append(this.overlay).append(this.container);
+            jQuery("body")
+                .append(this.overlay)
+                .append(this.editingNotification)
+                .append(this.container);
          },
          destroy: function () {
             this.overlay.remove();
@@ -178,8 +184,17 @@ class PageTranslator {
          this._enableMousePointing();
       });
 
-      modal.container.find('form').on('submit', (submitEvent) => {
+      modal.container.find('a.lokalise-translator-close').on('click', () => {
+         modal.hide();
+         this._enableMousePointing();
+      })
+
+      const form = modal.container.find('form');
+      const submitButton = form.find('button[type=submit]');
+      form.on('submit', (submitEvent) => {
          submitEvent.preventDefault();
+
+         submitButton.attr("disabled", "disabled").text("Saving...");
          
          this._postTranslation(
             modal.container.find('input[name=path]').val(),
@@ -193,6 +208,8 @@ class PageTranslator {
             console.error(error);
             modal.hide();
             this._enableMousePointing();
+         }).finally(() => {
+            submitButton.removeAttr("disabled").text("Save");
          });
 
          return false;
@@ -221,6 +238,7 @@ class PageTranslator {
             data: JSON.stringify(data),
             success: (response) => {
                this.translations[htmlSelector] = data;
+               this._insertTranslation(data);
                resolve(response);
             },
             error: (xhr, response) => {
